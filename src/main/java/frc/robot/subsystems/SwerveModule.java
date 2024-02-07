@@ -51,6 +51,8 @@ public class SwerveModule extends SubsystemBase {
         driveMtr = new CANSparkFlex(driveMtrId, MotorType.kBrushless);
         steerMtr = new CANSparkFlex(steerMtrId, MotorType.kBrushless);
 
+        steerMtr.setInverted(true);
+
         driveEnc = driveMtr.getEncoder();
         steerEnc = steerMtr.getEncoder();
 

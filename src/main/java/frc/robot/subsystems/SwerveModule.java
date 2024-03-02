@@ -70,18 +70,16 @@ public class SwerveModule extends SubsystemBase {
         driveController.setP(DriveConstants.drivekP);
         driveController.setD(DriveConstants.drivekD);
 
-        //set the output of the drive encoder to be in radians for linear measurement
+        // Set the output of the drive encoder to be in radians for linear measurement
         driveEnc.setPositionConversionFactor(DriveConstants.driveMetersPerEncRev);
 
-        //set the output of the drive encoder to be in radians per second for velocity measurement
+        // Set the output of the drive encoder to be in radians per second for velocity measurement
         driveEnc.setVelocityConversionFactor(DriveConstants.driveMetersPerSecPerRPM);
 
-        //set the output of the steeration encoder to be in radians
+        // Set the output of the steeration encoder to be in radians
         steerEnc.setPositionConversionFactor(DriveConstants.steerRadiansPerEncRev);
 
-        //configure the CANCoder to output in unsigned (wrap around from sensor value 1 to 0) and CCW positive
-        // FIXME: Make sure the CANcoders actually read CCW positive (when viewing from above), otherwise you will
-        // have to configure it as CW positive. This is either a hardware problem just on 6081 or a Phoenix 6 bug.
+        // Configure the CANCoder to output in unsigned (wrap around from sensor value 1 to 0) and CCW positive
         canCoder.getConfigurator().apply(
             new CANcoderConfiguration()
                 .withMagnetSensor(
@@ -209,6 +207,10 @@ public class SwerveModule extends SubsystemBase {
         }
     }
 
+    /**
+     * Sets the smart current limit of the drive motor.
+     * @param amps The current limit of the drive motor in amps.
+     */
     public void setDriveCurrentLimit(int amps) {
         driveMtr.setSmartCurrentLimit(amps);
     }

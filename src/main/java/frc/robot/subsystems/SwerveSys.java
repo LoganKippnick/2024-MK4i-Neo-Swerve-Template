@@ -13,6 +13,8 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.Constants.CANDevices;
 import frc.robot.Constants.DriveConstants;
 
@@ -52,16 +54,30 @@ public class SwerveSys extends SubsystemBase {
         );
 
     private boolean isLocked = false;
+    /**
+     * Returns whether the drivebase's wheels are locked in an x-pattern.
+     * This will turn false whenever a nonzero drive input is given.
+     * @return True if the drivebase's wheels are locked.
+     */
     public boolean isLocked() {
         return isLocked;
     }
 
     private boolean isFieldOriented = true;
+    /**
+     * Returns whether the drivebase's control is field-oriented.
+     * @return True if the drivebase is field-oriented. 
+     */
     public boolean isFieldOriented() {
         return isFieldOriented;
     }
 
     private double speedFactor = 1.0;
+    /**
+     * Returns the speed factor of the robot. Inputs are multiplied by this factor to reduce drive speed.
+     * Useful for "turtle" or "sprint" modes.
+     * @return The factor to which inputs are scaled, as a percentage.
+     */
     public double getSpeedFactor() {
         return speedFactor;
     }
@@ -77,7 +93,6 @@ public class SwerveSys extends SubsystemBase {
     private final Pigeon2 imu = new Pigeon2(CANDevices.imuId);
 
     // Odometry for the robot, measured in meters for linear motion and radians for rotational motion
-    // Takes in kinematics and robot angle for parameters
 
     private SwerveDrivePoseEstimator odometry = 
         new SwerveDrivePoseEstimator(
@@ -258,55 +273,60 @@ public class SwerveSys extends SubsystemBase {
     }
 
     /**
-     * @return The current estimated position of the robot on the field
-     * based on drive encoder and gyro readings.
+     * @return The current estimated position of the robot.
      */
     public Pose2d getPose() {
         return odometry.getEstimatedPosition();
     }
 
     /**
-     * Resets the current pose to (0, 0) with a heading of zero.
+     * @return The current estimated pose of the robot, which will be mirrored if on the red alliance.
+     * This is useful for checking the pose of the robot in an autonomous program, as PathPlanner paths
+     * can mirror blue side paths for use on the red side.
      */
-    public void resetPose() {
-        resetDriveDistances();
-        resetHeading();
-
-        odometry = new SwerveDrivePoseEstimator(
-            DriveConstants.kinematics,
-            new Rotation2d(),
-            getModulePositions(),
-            new Pose2d()
-        );
+    public Pose2d getBlueSidePose() {
+        if (DriverStation.getAlliance().get() == Alliance.Red) {
+            return new Pose2d(16.54 - getPose().getX(), getPose().getY(), new Rotation2d(MathUtil.angleModulus(getPose().getRotation().getRadians() - Math.PI)));
+        }
+        else {
+            return getPose();
+        }
     }
 
+    /**
+     * Sets the gyro heading to zero.
+     */
+    public void resetHeading() {
+        imu.setYaw(0.0);
+    }
+
+    /**
+     * Sets the gyro heading to a specified value.
+     * 
+     * @param heading The value to set the gyro heading as a Rotation2d.
+     */
     public void setHeading(Rotation2d heading) {
         imu.setYaw(MathUtil.inputModulus(heading.getDegrees(), 0.0, 360.0));
     }
-
+    
+    /**
+     * Resets the current pose to (0, 0) with a heading of zero.
+     */
+    public void resetPose() {
+        setPose(new Pose2d());
+    }
+    
     /**
      * Sets the pose of the robot.
      * 
      * @param pose The pose to set the robot to.
      */
     public void setPose(Pose2d pose) {
-        setHeading(pose.getRotation());
-
-        odometry = new SwerveDrivePoseEstimator(
-            DriveConstants.kinematics,
-            pose.getRotation(),
-            getModulePositions(),
-            pose
-        );
+        odometry.resetPosition(getHeading(), getModulePositions(), pose);
     }
 
     public void setTranslation(Translation2d translation) {
-        odometry = new SwerveDrivePoseEstimator(
-            DriveConstants.kinematics,
-            getHeading(),
-            getModulePositions(),
-            new Pose2d(translation, getHeading())
-        );
+        odometry.resetPosition(getHeading(), getModulePositions(), new Pose2d(translation, getHeading()));
     }
 
     /**
@@ -391,8 +411,7 @@ public class SwerveSys extends SubsystemBase {
      * @return The current pitch of the robot as a Rotation2d.
      */
     public Rotation2d getPitch() {
-        // IMU is turned 90 degrees, so pitch and roll are flipped.
-        return Rotation2d.fromDegrees(imu.getRoll().getValueAsDouble());
+        return Rotation2d.fromDegrees(imu.getPitch().getValueAsDouble());
     }
 
     /**
@@ -400,16 +419,8 @@ public class SwerveSys extends SubsystemBase {
      * 
      * @return The current roll of the robot as a Rotation2d.
      */
-    public Rotation2d getRollDegrees() {
-        // IMU is turned 90 degrees, so pitch and roll are flipped.
-        return Rotation2d.fromDegrees(imu.getPitch().getValueAsDouble());
-    }
-
-    /**
-     * Sets the gyro heading to zero.
-     */
-    public void resetHeading() {
-        imu.setYaw(0.0);
+    public Rotation2d getRoll() {
+        return Rotation2d.fromDegrees(imu.getRoll().getValueAsDouble());
     }
 
     /**

@@ -2,9 +2,11 @@ package frc.robot.commands.auto;
 
 import com.pathplanner.lib.commands.FollowPathHolonomic;
 import com.pathplanner.lib.path.PathPlannerPath;
-import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
+import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
 
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.subsystems.SwerveSys;
@@ -28,12 +30,12 @@ public class FollowTrajectoryCmd extends FollowPathHolonomic {
             swerveSys::getPose,
             swerveSys::getChassisSpeeds,
             swerveSys::setChassisSpeeds,
-            new HolonomicPathFollowerConfig(
-                maxVelMetersPerSec,
-                Math.hypot(DriveConstants.trackWidth / 2.0, DriveConstants.wheelBase / 2.0),
-                new ReplanningConfig()),
-            () -> true,
-            swerveSys);
+            new PIDConstants(AutoConstants.drivekP, AutoConstants.drivekD),
+            new PIDConstants(AutoConstants.rotkP, AutoConstants.rotkD),
+            maxVelMetersPerSec,
+            Math.hypot(DriveConstants.trackWidth / 2.0, DriveConstants.wheelBase / 2.0),
+            new ReplanningConfig(),
+            () -> DriverStation.getAlliance().get() == Alliance.Red);
 
         this.swerveSys = swerveSys;
     }
